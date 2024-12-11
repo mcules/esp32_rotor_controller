@@ -1,8 +1,10 @@
-# ESP32 Rotor Controller
+# ESP32-C3 Rotor Controller
 
 ## Overview
 
-This project is a WiFi-based rotor controller for an Azimuth-Elevation (Az/El) system. It is built on the ESP32 platform and allows clients to connect via TCP to control and monitor the rotor's position. The script uses the WiFiManager library for network configuration and provides various commands for interacting with the rotor.
+This project is a WiFi-based rotor controller for an Azimuth-Elevation (Az/El) system, built on the ESP32-C3 platform. Clients can connect via TCP to control and monitor the rotor's position. The script uses the WiFiManager library for network configuration and provides various commands for interacting with the rotor.
+
+In the future, a web interface will be added to configure and manage the controller more easily.
 
 ---
 
@@ -16,20 +18,21 @@ This project is a WiFi-based rotor controller for an Azimuth-Elevation (Az/El) s
   - Stop rotor movement.
 - **Command Interface**: Supports specific commands to control and query the rotor.
 - **Smooth Movement**: Simulates smooth rotor movements towards the target position.
+- **Future Web Interface**: Planned addition of a web-based GUI for easier configuration and control.
 
 ---
 
 ## Hardware Requirements
 
 - ESP32-C3 development board
-- Azimuth-Elevation rotor (needs integration)
+- Azimuth-Elevation rotor (optional; for integration)
 - WiFi network
 
 ---
 
 ## Software Requirements
 
-- Arduino IDE or compatible ESP32 programming environment
+- Arduino IDE or compatible ESP32-C3 programming environment
 - WiFiManager library (`WiFiManager`)
 
 ---
@@ -38,27 +41,27 @@ This project is a WiFi-based rotor controller for an Azimuth-Elevation (Az/El) s
 
 1. **Install Dependencies**:
    - Download and install the Arduino IDE.
-   - Add ESP32 board support to the Arduino IDE.
+   - Add ESP32 board support to the Arduino IDE (ensure ESP32-C3 compatibility).
    - Install the `WiFiManager` library through the Arduino Library Manager.
 
 2. **Upload Code**:
    - Open the provided script in the Arduino IDE.
-   - Connect your ESP32 to the computer via USB.
+   - Connect your ESP32-C3 to the computer via USB.
    - Select the correct board and COM port in the Arduino IDE.
-   - Upload the code to the ESP32.
+   - Upload the code to the ESP32-C3.
 
 3. **Configure WiFi**:
-   - On first boot, the ESP32 will create a WiFi access point.
+   - On first boot, the ESP32-C3 will create a WiFi access point.
    - Connect to the AP and configure your WiFi credentials using the WiFiManager portal.
 
 4. **Run**:
-   - After WiFi configuration, the ESP32 will connect to the specified network and start the TCP server on port `4533`.
+   - After WiFi configuration, the ESP32-C3 will connect to the specified network and start the TCP server on port `4533`.
 
 ---
 
 ## Commands
 
-The ESP32 accepts the following commands via the TCP interface:
+The ESP32-C3 accepts the following commands via the TCP interface:
 
 | Command               | Description                                                                                   | Example Input          |
 |-----------------------|-----------------------------------------------------------------------------------------------|------------------------|
@@ -97,10 +100,21 @@ The ESP32 accepts the following commands via the TCP interface:
 
 ---
 
+## Planned Web Interface
+
+A web interface will be added in future updates to:
+- Configure network settings.
+- Configure rotor settings.
+- Monitor rotor status and position.
+- Send commands directly through a browser.
+- Offer an intuitive GUI for managing the rotor.
+
+---
+
 ## Troubleshooting
 
 - **WiFi Not Connecting**: Ensure your network credentials are entered correctly during the WiFiManager setup.
-- **No Response to Commands**: Verify that the client is connected to the correct IP and port of the ESP32.
+- **No Response to Commands**: Verify that the client is connected to the correct IP and port of the ESP32-C3.
 - **Unstable Movement**: Check for issues in the `updatePosition()` logic or refine the movement parameters.
 
 ---
@@ -109,7 +123,7 @@ The ESP32 accepts the following commands via the TCP interface:
 
 - Add actual rotor hardware integration for real-world applications.
 - Include feedback from encoders or sensors for accurate positioning.
-- Implement security features like password-protected command access.
+- Build and integrate the planned web interface.
 
 ---
 
