@@ -61,6 +61,9 @@ void processCommand(String command, WiFiClient &client)
     std::vector<String> output;
 
     command.trim();
+    if (command[0] == '/' || command[0] == '+')
+        command.remove(0, 1);
+
     if (!command.isEmpty())
     {
         Serial.println("Received command: " + command);
@@ -96,7 +99,7 @@ void processCommand(String command, WiFiClient &client)
             client.stop();
             return;
         }
-        else if (output[0] == "\\dump_state")
+        else if (output[0] == "dump_state")
         {
             toSendString = getDumpState();
         }
