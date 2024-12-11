@@ -1,4 +1,4 @@
-# ESP32-C3 Rotor Controller
+# ESP32 Rotor Controller
 
 ## Overview
 
@@ -103,11 +103,11 @@ The ESP32-C3 accepts the following commands via the TCP interface:
 ## Planned Web Interface
 
 A web interface will be added in future updates to:
-- Configure network settings.
-- Configure rotor settings.
-- Monitor rotor status and position.
-- Send commands directly through a browser.
-- Offer an intuitive GUI for managing the rotor.
+- [ ] Configure network settings.
+- [ ] Configure rotor settings.
+- [x] Monitor rotor status and position.
+- [x] Send commands directly through a browser.
+- [ ] Offer an intuitive GUI for managing the rotor.
 
 ---
 
