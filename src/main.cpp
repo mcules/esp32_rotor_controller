@@ -3,6 +3,7 @@
 #include <vector>
 #include <WebServer.h>
 #include <EEPROM.h>
+#include <SPIFFS.h>
 
 WiFiManager wifiManager;
 
@@ -210,77 +211,17 @@ void saveConfig()
 // Function to set up the web interface
 void setupWebInterface()
 {
+    // Route for the root path
     webServer.on("/", HTTP_GET, []()
                  {
-                     String html = "<!DOCTYPE html>"
-                                   "<html>"
-                                   "<head>"
-                                   "<meta charset='utf-8'>" // Explicitly set character encoding to UTF-8
-                                   "<title>ESP32 Rotor Controller</title>"
-                                   "<style>"
-                                   "body { font-family: sans-serif; text-align: center; }"
-                                   "h1 { margin-bottom: 20px; }"
-                                   ".container { display: flex; flex-direction: column; align-items: center;  }"
-                                   ".data { display: flex; flex-direction: column; align-items: center; margin-bottom: 20px; }"
-                                   ".coordinates { font-size: 24px; margin-bottom: 10px; }"
-                                   ".input-group { display: flex; align-items: center; margin-bottom: 10px; }"
-                                   "input[type='number'] { width: 80px; margin-right: 10px; }"
-                                   "button { padding: 8px 16px; background-color: #4CAF50; color: white; border: none; }"
-                                   "</style>"
-                                   "</head>"
-                                   "<body>"
-                                   "<h1>ESP32 Rotor Controller</h1>"
-                                   "<div class='container'>"
-                                   "<div class='data'>"
-                                   "<div class='coordinates'>Azimuth: <span id='azimuth'>" +
-                                   String(currentAzimuth, 2) + "</span>&deg;"
-                                                               " (<span id='targetAzimuth'>" +
-                                   String(targetAzimuth, 2) + "</span>&deg;)</div>"
-                                                              "<div class='coordinates'>Elevation: <span id='elevation'>" +
-                                   String(currentElevation, 2) + "</span>&deg;"
-                                                                 " (<span id='targetElevation'>" +
-                                   String(targetElevation, 2) + "</span>&deg;)</div>"
-                                                                "<form id='set-position-form'>"
-                                                                "<div class='input-group'>"
-                                                                "<label for='azimuthInput'>Azimuth:</label>"
-                                                                "<input type='number' id='azimuthInput' name='azimuth' min='-180' max='180' step='0.1' value='" +
-                                   String(targetAzimuth, 2) + "'>"
-                                                              "</div>"
-                                                              "<div class='input-group'>"
-                                                              "<label for='elevationInput'>Elevation:</label>"
-                                                              "<input type='number' id='elevationInput' name='elevation' min='-90' max='90' step='0.1' value='" +
-                                   String(targetElevation, 2) + "'>"
-                                                                "</div>"
-                                                                "<button type='submit'>Set Position</button>"
-                                                                "</form>"
-                                                                "<a href='/configure'>Configure settings</a>"
-                                                                "</div>"
-                                                                "</div>"
-                                                                "<script>"
-                                                                "setInterval(function() {"
-                                                                "  fetch('/coordinates')"
-                                                                "  .then(response => response.json())"
-                                                                "  .then(data => {"
-                                                                "    document.getElementById('azimuth').textContent = data.azimuth;"
-                                                                "    document.getElementById('targetAzimuth').textContent = data.targetAzimuth;"
-                                                                "    document.getElementById('elevation').textContent = data.elevation;"
-                                                                "    document.getElementById('targetElevation').textContent = data.targetElevation;"
-                                                                "  });"
-                                                                "}, 1000);"
-
-                                                                "document.getElementById('set-position-form').addEventListener('submit', function(event) {"
-                                                                "  event.preventDefault();"
-                                                                "  var azimuth = document.getElementById('azimuthInput').value;"
-                                                                "  var elevation = document.getElementById('elevationInput').value;"
-                                                                "  fetch('/set_position?azimuth=' + azimuth + '&elevation=' + elevation)"
-                                                                "  .then(response => response.text())"
-                                                                "  .then(data => console.log(data));"
-                                                                "});"
-                                                                "</script>"
-                                                                "</body>"
-                                                                "</html>";
-                     webServer.send(200, "text/html; charset=utf-8", html); // Set UTF-8 encoding in header
-                 });
+    String filePath = "/index.html";
+    if (SPIFFS.exists(filePath)) {
+      File file = SPIFFS.open(filePath, "r");
+      webServer.streamFile(file, "text/html");
+      file.close();
+    } else {
+      webServer.send(404, "text/plain", "File not found");
+    } });
 
     // Endpoint to handle setting the position
     webServer.on("/set_position", HTTP_GET, []()
@@ -288,11 +229,17 @@ void setupWebInterface()
     if (webServer.hasArg("azimuth") && webServer.hasArg("elevation")) {
       double azimuth = webServer.arg("azimuth").toDouble();
       double elevation = webServer.arg("elevation").toDouble();
-      setRotorPosition(azimuth, elevation); // Call your existing function to set the position
+      setRotorPosition(azimuth, elevation);
       webServer.send(200, "text/plain", "Position set successfully.");
     } else {
       webServer.send(400, "text/plain", "Missing azimuth or elevation parameters.");
     } });
+
+    // Endpoint to handle stopping the rotor
+    webServer.on("/stop", HTTP_GET, []()
+                 {
+    stopRotor();
+    webServer.send(200, "text/plain", "Rotor stopped."); });
 
     // Endpoint to provide coordinate data
     webServer.on("/coordinates", HTTP_GET, []()
@@ -303,48 +250,43 @@ void setupWebInterface()
                   "\"targetElevation\":\"" + String(targetElevation, 2) + "\"}";
     webServer.send(200, "application/json", json); });
 
+    // Route for the configuration page
     webServer.on("/configure", HTTP_GET, []()
                  {
-    String form = "<h1>Configure Settings</h1>"
-                  "<form method='POST' action='/configure'>"
-                  "<label for='tcp_server_port'>TCP Server Port:</label><br>"
-                  "<input type='number' id='tcp_server_port' name='tcp_server_port' value='" +
-                  String(tcpServerPort) + "' required><br><br>"
-                  "<label for='position_update_interval'>Position Update Interval (ms):</label><br>"
-                  "<input type='number' id='position_update_interval' name='position_update_interval' value='" +
-                  String(positionUpdateInterval) + "' required><br><br>"
-                  "<input type='submit' value='Update'>"
-                  "</form>";
-    webServer.send(200, "text/html", form); });
+    String filePath = "/configure.html";
+    if (SPIFFS.exists(filePath)) {
+      File file = SPIFFS.open(filePath, "r");
+      webServer.streamFile(file, "text/html");
+      file.close();
+    } else {
+      webServer.send(404, "text/plain", "File not found");
+    } });
 
+    // Route for the configuration page (POST)
     webServer.on("/configure", HTTP_POST, []()
                  {
-    if (webServer.hasArg("tcp_server_port") && webServer.hasArg("position_update_interval"))
-    {
+    if (webServer.hasArg("tcp_server_port") && webServer.hasArg("position_update_interval")) {
       tcpServerPort = webServer.arg("tcp_server_port").toInt();
       positionUpdateInterval = webServer.arg("position_update_interval").toInt();
 
-      // Save the updated configuration to EEPROM
       saveConfig();
 
-      // Restart the server with the new port
       server.close();
       server = WiFiServer(tcpServerPort);
       server.begin();
 
-      String response = "<h1>Configuration Updated</h1>"
-                        "<p>TCP Server Port: " + String(tcpServerPort) + "</p>"
-                        "<p>Position Update Interval: " + String(positionUpdateInterval) + " ms</p>"
-                        "<p>Changes will be applied after restart.</p>"
-                        "<p><a href='/'>Return to Home</a></p>";
-      webServer.send(200, "text/html", response);
-    }
-    else
-    {
-      webServer.send(400, "text/html",
-                     "<h1>Error: Missing Parameters</h1>"
-                     "<p>Please provide both <i>tcp_server_port</i> and <i>position_update_interval</i>.</p>"
-                     "<p><a href='/configure'>Go Back</a></p>");
+      String response = "/configure?tcp_port=" + String(tcpServerPort) + 
+                        "&update_interval=" + String(positionUpdateInterval);
+      webServer.sendHeader("Location", response, true);   // Redirect to config_updated.html
+      webServer.send(302, "text/plain", ""); 
+    } else {
+      if (SPIFFS.exists("/config_error.html")) {
+        File file = SPIFFS.open("/config_error.html", "r");
+        webServer.streamFile(file, "text/html");
+        file.close();
+      } else {
+        webServer.send(404, "text/plain", "File not found");
+      }
     } });
 
     webServer.begin();
@@ -355,8 +297,14 @@ void setup()
 {
     Serial.begin(115200);
 
-    // Load configuration from EEPROM
     loadConfig();
+
+    // Initialize SPIFFS
+    if (!SPIFFS.begin(true))
+    {
+        Serial.println("An Error has occurred while mounting SPIFFS");
+        return;
+    }
 
     wifiManager.autoConnect();
     server.begin();

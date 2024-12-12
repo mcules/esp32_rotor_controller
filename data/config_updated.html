@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset='utf-8'>
+  <title>Configuration Updated</title>
+  <style>
+    body { font-family: sans-serif; text-align: center; background-color: #f4f4f4; }
+    h1 { margin-bottom: 20px; color: #333; }
+    .container { display: flex; flex-direction: column; align-items: center; padding: 20px; border-radius: 10px; background-color: #fff; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); }
+    p { margin-bottom: 10px; color: #333; }
+    a { color: #337ab7; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <h1>Configuration Updated</h1>
+  <div class='container'>
+    <p>TCP Server Port: <span id="tcp-port"></span></p> 
+    <p>Position Update Interval: <span id="update-interval"></span> ms</p>
+    <p>Changes will be applied after restart.</p>
+    <a href='/'>Return to Home</a>
+  </div>
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    document.getElementById('tcp-port').textContent = urlParams.get('tcp_port');
+    document.getElementById('update-interval').textContent = urlParams.get('update_interval');
+  </script>
+</body>
+</html>

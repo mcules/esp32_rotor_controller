@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset='utf-8'>
+  <title>Configure Settings</title>
+  <style>
+    body { font-family: sans-serif; text-align: center; background-color: #f4f4f4; }
+    h1 { margin-bottom: 20px; color: #333; }
+    .container { display: flex; flex-direction: column; align-items: center; padding: 20px; border-radius: 10px; background-color: #fff; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); }
+    label { margin-right: 10px; color: #333; display: block; margin-bottom: 5px; }
+    input[type='number'] { width: 150px; padding: 8px; border: 1px solid #ddd; border-radius: 5px; margin-bottom: 10px; }
+    input[type='submit'] { padding: 10px 20px; background-color: #5cb85c; color: white; border: none; border-radius: 5px; cursor: pointer; }
+    a { color: #337ab7; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <h1>Configure Settings</h1>
+  <div class='container'>
+    <form method='POST' action='/configure'>
+      <label for='tcp_server_port'>TCP Server Port:</label>
+      <input type='number' id='tcp_server_port' name='tcp_server_port' value='4533' required>
+      <label for='position_update_interval'>Position Update Interval (ms):</label>
+      <input type='number' id='position_update_interval' name='position_update_interval' value='10' required>
+      <input type='submit' value='Update'>
+    </form>
+    <br>
+    <a href='/'>Return to Home</a>
+  </div>
+</body>
+</html>
