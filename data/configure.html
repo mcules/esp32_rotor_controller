@@ -19,9 +19,13 @@
   <div class='container'>
     <form method='POST' action='/configure'>
       <label for='tcp_server_port'>TCP Server Port:</label>
-      <input type='number' id='tcp_server_port' name='tcp_server_port' value='4533' required>
+      <input type='number' id='tcp_server_port' name='tcp_server_port' value='%TCP_SERVER_PORT%' required>
       <label for='position_update_interval'>Position Update Interval (ms):</label>
-      <input type='number' id='position_update_interval' name='position_update_interval' value='10' required>
+      <input type='number' id='position_update_interval' name='position_update_interval' value='%POSITION_UPDATE_INTERVAL%' required>
+      <label for="home_azimuth">Home Azimuth:</label>
+      <input type="number" id="home_azimuth" name="home_azimuth" value="%HOME_AZIMUTH%" min="-180" max="180" step="0.1">
+      <label for="home_elevation">Home Elevation:</label>
+      <input type="number" id="home_elevation" name="home_elevation" value="%HOME_ELEVATION%" min="-90" max="90" step="0.1">
       <input type='submit' value='Update'>
     </form>
     <br>

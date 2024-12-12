@@ -11,15 +11,21 @@ WiFiManager wifiManager;
 #define DEFAULT_TCP_SERVER_PORT 4533
 #define DEFAULT_WEBSERVER_PORT 80
 #define DEFAULT_POSITION_UPDATE_INTERVAL 10
+#define DEFAULT_HOME_AZIMUTH 0.00
+#define DEFAULT_HOME_ELEVATION 0.00
 
 // EEPROM addresses for storing configuration
 #define TCP_SERVER_PORT_ADDR 0
 #define POSITION_UPDATE_INTERVAL_ADDR 2
+#define HOME_AZIMUTH_ADDR 4
+#define HOME_ELEVATION_ADDR 6
 
 // Variables to store configuration
 int tcpServerPort = DEFAULT_TCP_SERVER_PORT;
 int webServerPort = DEFAULT_WEBSERVER_PORT;
 int positionUpdateInterval = DEFAULT_POSITION_UPDATE_INTERVAL;
+double homeAzimuth = DEFAULT_HOME_AZIMUTH;
+double homeElevation = DEFAULT_HOME_ELEVATION;
 
 double currentAzimuth = 0.0;
 double currentElevation = 0.0;
@@ -183,9 +189,16 @@ void handleClients()
 // Function to load configuration from EEPROM
 void loadConfig()
 {
-    EEPROM.begin(4);
+    EEPROM.begin(8);
+
     tcpServerPort = EEPROM.read(TCP_SERVER_PORT_ADDR) << 8 | EEPROM.read(TCP_SERVER_PORT_ADDR + 1);
     positionUpdateInterval = EEPROM.read(POSITION_UPDATE_INTERVAL_ADDR) << 8 | EEPROM.read(POSITION_UPDATE_INTERVAL_ADDR + 1);
+
+    int homeAzimuthInt = EEPROM.read(HOME_AZIMUTH_ADDR) << 8 | EEPROM.read(HOME_AZIMUTH_ADDR + 1);
+    homeAzimuth = static_cast<double>(homeAzimuthInt) / 100;
+
+    int homeElevationInt = EEPROM.read(HOME_ELEVATION_ADDR) << 8 | EEPROM.read(HOME_ELEVATION_ADDR + 1);
+    homeElevation = static_cast<double>(homeElevationInt) / 100;
 
     // If the values are invalid, use defaults
     if (tcpServerPort < 1 || tcpServerPort > 65535)
@@ -205,7 +218,24 @@ void saveConfig()
     EEPROM.write(TCP_SERVER_PORT_ADDR + 1, tcpServerPort & 0xFF);
     EEPROM.write(POSITION_UPDATE_INTERVAL_ADDR, positionUpdateInterval >> 8);
     EEPROM.write(POSITION_UPDATE_INTERVAL_ADDR + 1, positionUpdateInterval & 0xFF);
-    EEPROM.commit();
+
+    int homeAzimuthInt = static_cast<int>(homeAzimuth * 100);
+    EEPROM.write(HOME_AZIMUTH_ADDR, homeAzimuthInt >> 8);
+    EEPROM.write(HOME_AZIMUTH_ADDR + 1, homeAzimuthInt & 0xFF);
+
+    int homeElevationInt = static_cast<int>(homeElevation * 100);
+    EEPROM.write(HOME_ELEVATION_ADDR, homeElevationInt >> 8);
+    EEPROM.write(HOME_ELEVATION_ADDR + 1, homeElevationInt & 0xFF);
+
+    bool commitSuccess = EEPROM.commit();
+    if (commitSuccess)
+    {
+        Serial.println("EEPROM successfully committed");
+    }
+    else
+    {
+        Serial.println("ERROR! EEPROM commit failed");
+    }
 }
 
 // Function to set up the web interface
@@ -216,9 +246,13 @@ void setupWebInterface()
                  {
     String filePath = "/index.html";
     if (SPIFFS.exists(filePath)) {
-      File file = SPIFFS.open(filePath, "r");
-      webServer.streamFile(file, "text/html");
-      file.close();
+        File file = SPIFFS.open(filePath, "r");
+        String html = file.readString();
+        file.close();
+      
+        html.replace("%HOME_AZIMUTH%", String(homeAzimuth, 2));
+        html.replace("%HOME_ELEVATION%", String(homeElevation, 2));
+        webServer.send(200, "text/html", html);
     } else {
       webServer.send(404, "text/plain", "File not found");
     } });
@@ -253,40 +287,50 @@ void setupWebInterface()
     // Route for the configuration page
     webServer.on("/configure", HTTP_GET, []()
                  {
-    String filePath = "/configure.html";
-    if (SPIFFS.exists(filePath)) {
-      File file = SPIFFS.open(filePath, "r");
-      webServer.streamFile(file, "text/html");
-      file.close();
+    if (SPIFFS.exists("/configure.html")) {
+        File file = SPIFFS.open("/configure.html", "r");
+        String html = file.readString();
+        file.close();
+
+        html.replace("%TCP_SERVER_PORT%", String(tcpServerPort));
+        html.replace("%POSITION_UPDATE_INTERVAL%", String(positionUpdateInterval));
+        html.replace("%HOME_AZIMUTH%", String(homeAzimuth, 2));
+        html.replace("%HOME_ELEVATION%", String(homeElevation, 2));
+
+        webServer.send(200, "text/html", html);
     } else {
-      webServer.send(404, "text/plain", "File not found");
+        webServer.send(404, "text/plain", "File not found");
     } });
 
     // Route for the configuration page (POST)
     webServer.on("/configure", HTTP_POST, []()
                  {
-    if (webServer.hasArg("tcp_server_port") && webServer.hasArg("position_update_interval")) {
-      tcpServerPort = webServer.arg("tcp_server_port").toInt();
-      positionUpdateInterval = webServer.arg("position_update_interval").toInt();
+    if (webServer.hasArg("tcp_server_port") && webServer.hasArg("position_update_interval") && webServer.hasArg("home_azimuth") && webServer.hasArg("home_elevation")) {
+        tcpServerPort = webServer.arg("tcp_server_port").toInt();
+        positionUpdateInterval = webServer.arg("position_update_interval").toInt();
+        homeAzimuth = webServer.arg("home_azimuth").toDouble();
+        homeElevation = webServer.arg("home_elevation").toDouble();
 
-      saveConfig();
+        saveConfig();
 
-      server.close();
-      server = WiFiServer(tcpServerPort);
-      server.begin();
+        server.close();
+        server = WiFiServer(tcpServerPort);
+        server.begin();
 
-      String response = "/configure?tcp_port=" + String(tcpServerPort) + 
-                        "&update_interval=" + String(positionUpdateInterval);
-      webServer.sendHeader("Location", response, true);   // Redirect to config_updated.html
-      webServer.send(302, "text/plain", ""); 
+        String response = "/configure?tcp_port=" + String(tcpServerPort) + 
+                            "&update_interval=" + String(positionUpdateInterval) +
+                            "&home_azimuth=" + String(homeAzimuth) + 
+                            "&home_elevation=" + String(homeElevation);
+        webServer.sendHeader("Location", response, true);   // Redirect to config_updated.html
+        webServer.send(302, "text/plain", ""); 
     } else {
-      if (SPIFFS.exists("/config_error.html")) {
-        File file = SPIFFS.open("/config_error.html", "r");
-        webServer.streamFile(file, "text/html");
-        file.close();
-      } else {
-        webServer.send(404, "text/plain", "File not found");
-      }
+        if (SPIFFS.exists("/config_error.html")) {
+            File file = SPIFFS.open("/config_error.html", "r");
+            webServer.streamFile(file, "text/html");
+            file.close();
+        } else {
+            webServer.send(404, "text/plain", "File not found");
+        }
     } });
 
     webServer.begin();

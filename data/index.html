@@ -1,31 +1,102 @@
 <!DOCTYPE html>
 <html>
+
 <head>
   <meta charset='utf-8'>
   <title>ESP32 Rotor Controller</title>
   <style>
-    body { font-family: sans-serif; text-align: center; background-color: #f4f4f4; }
-    h1 { margin-bottom: 20px; color: #333; }
-    .container { display: flex; flex-direction: column; align-items: center; padding: 20px; border-radius: 10px; background-color: #fff; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); }
-    .data { display: flex; flex-direction: column; align-items: center; margin-bottom: 20px; }
-    .coordinates { font-size: 24px; margin-bottom: 10px; color: #333; }
-    .input-group { display: flex; align-items: center; margin-bottom: 10px; }
-    label { margin-right: 10px; color: #333; }
-    input[type='number'] { width: 80px; padding: 8px; border: 1px solid #ddd; border-radius: 5px; }
-    button { padding: 10px 20px; color: white; border: none; border-radius: 5px; cursor: pointer; margin-bottom: 10px; }
-    #stop-button { background-color: #d9534f; } 
-    #set-position-form button { background-color: #5cb85c; } 
-    #home-button { background-color: #007bff; } 
-    a { color: #337ab7; text-decoration: none; }
-    a:hover { text-decoration: underline; }
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      background-color: #f4f4f4;
+    }
+
+    h1 {
+      margin-bottom: 20px;
+      color: #333;
+    }
+
+    .container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+      border-radius: 10px;
+      background-color: #fff;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+
+    .data {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .coordinates {
+      font-size: 24px;
+      margin-bottom: 10px;
+      color: #333;
+    }
+
+    .input-group {
+      display: flex;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    label {
+      margin-right: 10px;
+      color: #333;
+    }
+
+    input[type='number'] {
+      width: 80px;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
+
+    button {
+      padding: 10px 20px;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-bottom: 10px;
+    }
+
+    #stop-button {
+      background-color: #d9534f;
+    }
+
+    #set-position-form button {
+      background-color: #5cb85c;
+    }
+
+    #home-button {
+      background-color: #007bff;
+    }
+
+    a {
+      color: #337ab7;
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
   </style>
 </head>
+
 <body>
   <h1>ESP32 Rotor Controller</h1>
   <div class='container'>
     <div class='data'>
-      <div class='coordinates'>Azimuth: <span id='azimuth'>0.00</span>&deg; (<span id='targetAzimuth'>0.00</span>&deg;)</div>
-      <div class='coordinates'>Elevation: <span id='elevation'>0.00</span>&deg; (<span id='targetElevation'>0.00</span>&deg;)</div>
+      <div class='coordinates'>Azimuth: <span id='azimuth'>0.00</span>&deg; (<span id='targetAzimuth'>0.00</span>&deg;)
+      </div>
+      <div class='coordinates'>Elevation: <span id='elevation'>0.00</span>&deg; (<span
+          id='targetElevation'>0.00</span>&deg;)</div>
       <form id='set-position-form'>
         <div class='input-group'>
           <label for='azimuthInput'>Azimuth:</label>
@@ -43,7 +114,7 @@
     </div>
   </div>
   <script>
-    setInterval(function() {
+    setInterval(function () {
       fetch('/coordinates')
         .then(response => response.json())
         .then(data => {
@@ -54,7 +125,7 @@
         });
     }, 1000);
 
-    document.getElementById('set-position-form').addEventListener('submit', function(event) {
+    document.getElementById('set-position-form').addEventListener('submit', function (event) {
       event.preventDefault();
       var azimuth = document.getElementById('azimuthInput').value;
       var elevation = document.getElementById('elevationInput').value;
@@ -63,17 +134,18 @@
         .then(data => console.log(data));
     });
 
-    document.getElementById('stop-button').addEventListener('click', function() {
+    document.getElementById('stop-button').addEventListener('click', function () {
       fetch('/stop')
         .then(response => response.text())
         .then(data => console.log(data));
     });
 
-    document.getElementById('home-button').addEventListener('click', function() {
-      fetch('/set_position?azimuth=0&elevation=0')
+    document.getElementById('home-button').addEventListener('click', function () {
+      fetch('/set_position?azimuth=%HOME_AZIMUTH%&elevation=%HOME_ELEVATION%')
         .then(response => response.text())
         .then(data => console.log(data));
     });
   </script>
 </body>
+
 </html>
