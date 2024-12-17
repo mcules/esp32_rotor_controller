@@ -115,7 +115,7 @@
   </div>
   <script>
     setInterval(function () {
-      fetch('/coordinates')
+      fetch('/api/coordinates')
         .then(response => response.json())
         .then(data => {
           document.getElementById('azimuth').textContent = data.azimuth;
@@ -129,19 +129,19 @@
       event.preventDefault();
       var azimuth = document.getElementById('azimuthInput').value;
       var elevation = document.getElementById('elevationInput').value;
-      fetch('/set_position?azimuth=' + azimuth + '&elevation=' + elevation)
+      fetch('/api/set_position?azimuth=' + azimuth + '&elevation=' + elevation)
         .then(response => response.text())
         .then(data => console.log(data));
     });
 
     document.getElementById('stop-button').addEventListener('click', function () {
-      fetch('/stop')
+      fetch('/api/stop')
         .then(response => response.text())
         .then(data => console.log(data));
     });
 
     document.getElementById('home-button').addEventListener('click', function () {
-      fetch('/set_position?azimuth=%HOME_AZIMUTH%&elevation=%HOME_ELEVATION%')
+      fetch('/api/set_position?azimuth=%HOME_AZIMUTH%&elevation=%HOME_ELEVATION%')
         .then(response => response.text())
         .then(data => console.log(data));
     });

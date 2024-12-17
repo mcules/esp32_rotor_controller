@@ -1,35 +1,346 @@
 <!DOCTYPE html>
 <html>
+
 <head>
   <meta charset='utf-8'>
   <title>Configure Settings</title>
   <style>
-    body { font-family: sans-serif; text-align: center; background-color: #f4f4f4; }
-    h1 { margin-bottom: 20px; color: #333; }
-    .container { display: flex; flex-direction: column; align-items: center; padding: 20px; border-radius: 10px; background-color: #fff; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); }
-    label { margin-right: 10px; color: #333; display: block; margin-bottom: 5px; }
-    input[type='number'] { width: 150px; padding: 8px; border: 1px solid #ddd; border-radius: 5px; margin-bottom: 10px; }
-    input[type='submit'] { padding: 10px 20px; background-color: #5cb85c; color: white; border: none; border-radius: 5px; cursor: pointer; }
-    a { color: #337ab7; text-decoration: none; }
-    a:hover { text-decoration: underline; }
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      background-color: #f4f4f4;
+    }
+
+    h1 {
+      margin-bottom: 20px;
+      color: #333;
+    }
+
+    .form-group {
+      display: flex;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .form-group label {
+      width: 200px;
+      text-align: right;
+      margin-right: 10px;
+      margin-bottom: 0;
+    }
+
+    .form-group input[type='number'] {
+      flex-grow: 1;
+      width: auto;
+    }
+
+    .container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+      border-radius: 10px;
+      background-color: #fff;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+
+    label {
+      margin-right: 10px;
+      color: #333;
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    input[type='number'] {
+      width: 150px;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      margin-bottom: 10px;
+    }
+
+    input[type='submit'] {
+      padding: 10px 20px;
+      background-color: blue;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .button-row {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    button {
+      padding: 10px 20px;
+      background-color: #5cb85c;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    a {
+      color: #337ab7;
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    .loading-spinner {
+      width: 100px;
+      height: 40px;
+      position: relative;
+      margin: 0 auto;
+      margin-bottom: 10px;
+      overflow: hidden;
+    }
+
+    .loading-spinner .arrow {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 0;
+      height: 0;
+      border-top: 10px solid transparent;
+      border-bottom: 10px solid transparent;
+      border-right: 20px solid red;
+    }
+
+    .loading-spinner.left .arrow {
+      animation: move-right 1s linear infinite;
+      right: 0;
+      transform: translateY(-50%);
+      border-right: 20px solid red;
+      border-left: none;
+    }
+
+    .loading-spinner.right .arrow {
+      animation: move-left 1s linear infinite;
+      left: 0;
+      transform: translateY(-50%);
+      border-left: 20px solid red;
+      border-right: none;
+    }
+
+    .loading-spinner.up .arrow {
+      animation: move-up 1s linear infinite;
+      bottom: 0;
+      transform: translateX(-50%) rotate(-90deg);
+      border-top: 20px solid red;
+      border-bottom: none;
+      border-left: none;
+      border-right: none;
+    }
+
+    .loading-spinner.down .arrow {
+      animation: move-down 1s linear infinite;
+      top: 0;
+      transform: translateX(-50%) rotate(90deg);
+      border-bottom: 20px solid red;
+      border-top: none;
+      border-left: none;
+      border-right: none;
+    }
+
+    @keyframes move-left {
+      0% {
+        left: 0;
+      }
+
+      100% {
+        left: 100%;
+      }
+    }
+
+    @keyframes move-right {
+      0% {
+        right: 0;
+      }
+
+      100% {
+        right: 100%;
+      }
+    }
+
+    @keyframes move-up {
+      0% {
+        bottom: 0;
+      }
+
+      100% {
+        bottom: 100%;
+      }
+    }
+
+    @keyframes move-down {
+      0% {
+        top: 0;
+      }
+
+      100% {
+        top: 100%;
+      }
+    }
+
+    #overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+    }
+
+    #popup {
+      background-color: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+      border: 1px solid #ccc;
+    }
+
+    #calibration-values {
+      margin-top: 10px;
+    }
   </style>
+  <script>
+    async function findPoti(potiId, axis) {
+      const directions = (axis === 'Elevation') ? ['down', 'up'] : ['left', 'right'];
+
+      await calibrate(potiId, directions[0], axis);
+      await calibrate(potiId, directions[1], axis);
+    }
+
+    async function calibrate(potiId, direction, axis) {
+      showLoadingOverlay(direction, axis);
+      try {
+        const response = await fetch(`/api/${direction === 'left' || direction === 'down' ? 'findMin' : 'findMax'}?poti=${potiId}`);
+        alert(await response.text());
+      } finally {
+        hideLoadingOverlay();
+      }
+    }
+
+    function showLoadingOverlay(direction, axis) {
+      const spinner = document.querySelector("#popup .loading-spinner");
+      spinner.classList.remove("left", "right");
+      if (axis == "Elevation") {
+        spinner.classList.remove("left", "right");
+        if (direction == "up") {
+          spinner.classList.add("right");
+        } else {
+          spinner.classList.add("left");
+        }
+      } else {
+        spinner.classList.add(direction);
+      }
+
+      const textElement = document.getElementById("calibration-text");
+      textElement.textContent = `Kalibrierung ${axis} (${direction === 'left' ? 'links' : (direction === 'right' ? 'rechts' : (direction === 'up' ? 'hoch' : 'runter'))}) läuft...`;
+
+      document.getElementById("overlay").style.display = "flex";
+    }
+
+    function hideLoadingOverlay() {
+      document.getElementById("overlay").style.display = "none";
+    }
+
+    async function loadCurrentConfig() {
+      const response = await fetch('/api/current-config');
+      const config = await response.json();
+
+      console.log(config);
+
+      document.getElementById('tcp_server_port').value = config.tcp_server_port;
+      document.getElementById('web_server_port').value = config.web_server_port;
+      document.getElementById('position_update_interval').value = config.position_update_interval;
+      document.getElementById('poti_tolerance').value = config.poti_tolerance;
+      document.getElementById('num_readings').value = config.num_readings;
+      document.getElementById('azimuth_home').value = config.azimuth_home.toFixed(2);
+      document.getElementById('azimuth_min').value = config.azimuth_min.toFixed(2);
+      document.getElementById('azimuth_max').value = config.azimuth_max.toFixed(2);
+      document.getElementById('elevation_home').value = config.elevation_home.toFixed(2);
+      document.getElementById('elevation_min').value = config.elevation_min.toFixed(2);
+      document.getElementById('elevation_max').value = config.elevation_max.toFixed(2);
+    }
+
+    window.onload = loadCurrentConfig;
+  </script>
 </head>
+
 <body>
-  <h1>Configure Settings</h1>
+  <h1>Rotor Controller Settings</h1>
   <div class='container'>
     <form method='POST' action='/configure'>
-      <label for='tcp_server_port'>TCP Server Port:</label>
-      <input type='number' id='tcp_server_port' name='tcp_server_port' value='%TCP_SERVER_PORT%' required>
-      <label for='position_update_interval'>Position Update Interval (ms):</label>
-      <input type='number' id='position_update_interval' name='position_update_interval' value='%POSITION_UPDATE_INTERVAL%' required>
-      <label for="home_azimuth">Home Azimuth:</label>
-      <input type="number" id="home_azimuth" name="home_azimuth" value="%HOME_AZIMUTH%" min="-180" max="180" step="0.1">
-      <label for="home_elevation">Home Elevation:</label>
-      <input type="number" id="home_elevation" name="home_elevation" value="%HOME_ELEVATION%" min="-90" max="90" step="0.1">
+      <div class="form-group">
+        <label for='tcp_server_port'>TCP Server Port:</label>
+        <input type='number' id='tcp_server_port' name='tcp_server_port' required>
+      </div>
+      <div class="form-group">
+        <label for='web_server_port'>Webserver Port:</label>
+        <input type='number' id='web_server_port' name='web_server_port' required>
+      </div>
+      <div class="form-group">
+        <label for='position_update_interval'>Position Update Interval (ms):</label>
+        <input type='number' id='position_update_interval' name='position_update_interval' required>
+      </div>
+      <div class="form-group">
+        <label for="azimuth_home">Home Azimuth:</label>
+        <input type="number" id="azimuth_home" name="azimuth_home" min="-180" max="180"
+          step="0.1">
+      </div>
+      <div class="form-group">
+        <label for="elevation_home">Home Elevation:</label>
+        <input type="number" id="elevation_home" name="elevation_home" min="-90" max="90"
+          step="0.1">
+      </div>
+      <div class="form-group">
+        <label for="poti_tolerance">Poti Toleranz:</label>
+        <input type="number" id="poti_tolerance" name="poti_tolerance" min="-0" max="10"
+          step="0.1">
+      </div>
+      <div class="form-group">
+        <label for="num_readings">Mittelwerte:</label>
+        <input type="number" id="num_readings" name="num_readings" min="1" step="1">
+      </div>
+      <br>
       <input type='submit' value='Update'>
     </form>
+
+    <h2>Azimuth kalibrieren</h2>
+    <div class="button-row">
+      Werte: <div id="azimuth_min"></div>/<div id="azimuth_max"></div>
+      <button onclick="findPoti(0, 'Azimuth')">Kalibrieren</button>
+    </div>
+
+    <h2>Elevation kalibrieren</h2>
+    <div class="button-row">
+      Werte: <div id="elevation_min"></div>/<div id="elevation_max"></div>
+      <button onclick="findPoti(1, 'Elevation')">Kalibrieren</button>
+    </div>
+
     <br>
     <a href='/'>Return to Home</a>
   </div>
+  <div id="overlay">
+    <div id="popup">
+      <div class="loading-spinner">
+        <div class="arrow"></div>
+      </div>
+      <p id="calibration-text">Kalibrierung läuft...</p>
+    </div>
+  </div>
 </body>
+
 </html>
